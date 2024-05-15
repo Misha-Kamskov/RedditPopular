@@ -1,6 +1,18 @@
 package com.example.popularreddit.ui.screens
 
+import android.Manifest
+import android.content.ContentValues
+import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -40,6 +52,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -61,6 +75,9 @@ import com.example.popularreddit.models.appsettings.model.AppSettings
 import com.example.popularreddit.ui.DarkGrey
 import com.example.popularreddit.ui.MainBlue
 import com.m.andrii.phonicsabc.models.appsettings.model.AppSettingsPrefs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MainScreen(settingsStore: AppSettingsPrefs) {
@@ -121,7 +138,7 @@ private fun RedditContentVertical(infoBannerClosed: MutableState<Boolean>) {
         item {
             AnimatedVisibility(
                 visible = !infoBannerClosed.value,
-                enter = slideInHorizontally (initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
+                enter = slideInHorizontally(initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
                 exit = slideOutHorizontally(targetOffsetX = { fullWidth -> 2 * fullWidth }) + fadeOut()
             ) {
                 InformationBanner()
@@ -149,7 +166,7 @@ private fun RedditContentHorizontal(infoBannerClosed: MutableState<Boolean>) {
             item {
                 AnimatedVisibility(
                     visible = !infoBannerClosed.value,
-                    enter = slideInHorizontally (initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
+                    enter = slideInHorizontally(initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
                     exit = slideOutHorizontally(targetOffsetX = { fullWidth -> 2 * fullWidth }) + fadeOut()
                 ) {
                     InformationBanner()
@@ -198,6 +215,10 @@ private fun RedditTopBar() {
 
 @Composable
 private fun RedditCardVertical() {
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -224,16 +245,13 @@ private fun RedditCardVertical() {
             )
         }
 
-
-        Box(
+        Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f)
-                .background(MainBlue),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "Image from Reddit", color = Color.White)
-        }
+                .wrapContentHeight(),
+            painter = painterResource(id = R.drawable.test_img_toffy_cake),
+            contentDescription = null
+        )
 
         Row(
             modifier = Modifier
@@ -262,7 +280,16 @@ private fun RedditCardVertical() {
             Image(
                 modifier = Modifier
                     .width(20.dp)
-                    .wrapContentHeight(),
+                    .wrapContentHeight()
+                    .clickable {
+                        val drawable = context.resources.getDrawable(R.drawable.test_img_toffy_cake, context.theme)
+                        val bitmap = drawable?.let { drawableToBitmap(it) }
+                        bitmap?.let {
+                            coroutineScope.launch {
+                                saveImageToGallery(context, bitmap, "test_img_toffy_cake")
+                            }
+                        }
+                    },
                 painter = painterResource(id = R.drawable.icon_not_saved),
                 contentDescription = null
             )
@@ -272,19 +299,24 @@ private fun RedditCardVertical() {
 
 @Composable
 private fun RedditCardHorizontal() {
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     Row(
         modifier = Modifier
             .fillMaxHeight(0.95f)
             .wrapContentWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+
+        Image(
             modifier = Modifier
                 .fillMaxHeight()
-                .aspectRatio(1f)
-                .background(MainBlue),
-            contentAlignment = Alignment.Center
-        ) { Text(text = "Image from Reddit", color = Color.White) }
+                .wrapContentWidth(),
+            painter = painterResource(id = R.drawable.test_img_toffy_cake),
+            contentDescription = null
+        )
 
         Column(
             modifier = Modifier
@@ -357,7 +389,14 @@ private fun RedditCardHorizontal() {
                     .width(20.dp)
                     .wrapContentHeight()
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 5.dp),
+                    .padding(bottom = 5.dp)
+                    .clickable {
+                        val drawable = context.resources.getDrawable(R.drawable.test_img_toffy_cake, context.theme)
+                        val bitmap = drawable?.let { drawableToBitmap(it) }
+                        coroutineScope.launch {
+                            saveImageToGallery(context, bitmap!!, "test_img_toffy_cake")
+                        }
+                    },
                 painter = painterResource(id = R.drawable.icon_not_saved),
                 contentDescription = null
             )
@@ -480,6 +519,32 @@ private fun InformationBanner(modifier: Modifier = Modifier, onCloseButtonClick:
             }
         }
     }
+}
 
+suspend fun saveImageToGallery(context: Context, bitmap: Bitmap, filename: String) {
+    withContext(Dispatchers.IO) {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "$filename.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
 
+        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)?.let { uri ->
+            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+        }
+    }
+}
+
+fun drawableToBitmap(drawable: Drawable): Bitmap {
+    return if (drawable is BitmapDrawable) {
+        drawable.bitmap
+    } else {
+        Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888).apply {
+            val canvas = Canvas(this)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+        }
+    }
 }
