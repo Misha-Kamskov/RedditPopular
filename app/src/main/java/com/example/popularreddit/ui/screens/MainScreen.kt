@@ -1,6 +1,5 @@
 package com.example.popularreddit.ui.screens
 
-import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.res.Configuration
@@ -8,11 +7,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -70,6 +66,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.popularreddit.FullScreenPhoto
 import com.example.popularreddit.R
 import com.example.popularreddit.models.appsettings.model.AppSettings
 import com.example.popularreddit.ui.DarkGrey
@@ -98,6 +95,9 @@ fun MainScreen(settingsStore: AppSettingsPrefs) {
         }
     }
 
+    var fullScreenImageVisibility by rememberSaveable { mutableStateOf(false) }
+
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.White,
@@ -108,24 +108,36 @@ fun MainScreen(settingsStore: AppSettingsPrefs) {
                 RedditTopBar()
 
                 when (orientation) {
-                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(infoBannerClosed)
-                    else -> RedditContentHorizontal(infoBannerClosed)
+                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
+                        infoBannerClosed,
+                        onCardImageClick = {
+                            fullScreenImageVisibility = true
+                        })
+
+                    else -> RedditContentHorizontal(infoBannerClosed,
+                        onCardImageClick = {
+                            fullScreenImageVisibility = true
+                        })
                 }
             }
 
             AnimatedVisibility(
-                visible = false, enter = scaleIn() + fadeIn(),
+                visible = fullScreenImageVisibility, enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut(),
             ) {
                 //Full Screen Image
-                var fullScreenImageVisibility by rememberSaveable { mutableStateOf(false) }
+                FullScreenPhoto(
+                    imageId = R.drawable.test_img_toffy_cake,
+                    onDismiss = { fullScreenImageVisibility = false })
             }
         }
     }
 }
 
 @Composable
-private fun RedditContentVertical(infoBannerClosed: MutableState<Boolean>) {
+private fun RedditContentVertical(
+    infoBannerClosed: MutableState<Boolean>, onCardImageClick: (imageId: Int) -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -147,13 +159,16 @@ private fun RedditContentVertical(infoBannerClosed: MutableState<Boolean>) {
         }
 
         items(20) {
-            RedditCardVertical()
+            RedditCardVertical(onCardImageClick = { onCardImageClick(it) })
         }
     }
 }
 
 @Composable
-private fun RedditContentHorizontal(infoBannerClosed: MutableState<Boolean>) {
+private fun RedditContentHorizontal(
+    infoBannerClosed: MutableState<Boolean>,
+    onCardImageClick: (imageId: Int) -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         LazyRow(
             modifier = Modifier
@@ -175,12 +190,10 @@ private fun RedditContentHorizontal(infoBannerClosed: MutableState<Boolean>) {
             }
 
             items(20) {
-                RedditCardHorizontal()
+                RedditCardHorizontal(onCardImageClick = { onCardImageClick(it) })
             }
         }
-
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -214,7 +227,7 @@ private fun RedditTopBar() {
 }
 
 @Composable
-private fun RedditCardVertical() {
+private fun RedditCardVertical(onCardImageClick: (imageId: Int) -> Unit) {
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -248,7 +261,8 @@ private fun RedditCardVertical() {
         Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .clickable { onCardImageClick(R.drawable.test_img_toffy_cake) },
             painter = painterResource(id = R.drawable.test_img_toffy_cake),
             contentDescription = null
         )
@@ -282,7 +296,10 @@ private fun RedditCardVertical() {
                     .width(20.dp)
                     .wrapContentHeight()
                     .clickable {
-                        val drawable = context.resources.getDrawable(R.drawable.test_img_toffy_cake, context.theme)
+                        val drawable = context.resources.getDrawable(
+                            R.drawable.test_img_toffy_cake,
+                            context.theme
+                        )
                         val bitmap = drawable?.let { drawableToBitmap(it) }
                         bitmap?.let {
                             coroutineScope.launch {
@@ -298,7 +315,7 @@ private fun RedditCardVertical() {
 }
 
 @Composable
-private fun RedditCardHorizontal() {
+private fun RedditCardHorizontal(onCardImageClick: (imageId: Int) -> Unit) {
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -313,7 +330,8 @@ private fun RedditCardHorizontal() {
         Image(
             modifier = Modifier
                 .fillMaxHeight()
-                .wrapContentWidth(),
+                .wrapContentWidth()
+                .clickable { onCardImageClick(R.drawable.test_img_toffy_cake) },
             painter = painterResource(id = R.drawable.test_img_toffy_cake),
             contentDescription = null
         )
@@ -391,7 +409,10 @@ private fun RedditCardHorizontal() {
                     .align(Alignment.CenterHorizontally)
                     .padding(bottom = 5.dp)
                     .clickable {
-                        val drawable = context.resources.getDrawable(R.drawable.test_img_toffy_cake, context.theme)
+                        val drawable = context.resources.getDrawable(
+                            R.drawable.test_img_toffy_cake,
+                            context.theme
+                        )
                         val bitmap = drawable?.let { drawableToBitmap(it) }
                         coroutineScope.launch {
                             saveImageToGallery(context, bitmap!!, "test_img_toffy_cake")
@@ -403,6 +424,7 @@ private fun RedditCardHorizontal() {
         }
     }
 }
+
 
 @Composable
 private fun InformationBanner(modifier: Modifier = Modifier, onCloseButtonClick: () -> Unit) {
@@ -529,11 +551,12 @@ suspend fun saveImageToGallery(context: Context, bitmap: Bitmap, filename: Strin
             put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
         }
 
-        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)?.let { uri ->
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?.let { uri ->
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                }
             }
-        }
     }
 }
 
@@ -541,7 +564,11 @@ fun drawableToBitmap(drawable: Drawable): Bitmap {
     return if (drawable is BitmapDrawable) {
         drawable.bitmap
     } else {
-        Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888).apply {
+        Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        ).apply {
             val canvas = Canvas(this)
             drawable.setBounds(0, 0, canvas.width, canvas.height)
             drawable.draw(canvas)
