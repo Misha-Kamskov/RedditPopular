@@ -2,10 +2,13 @@ package com.example.popularreddit.ui.screens
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,21 +48,39 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.popularreddit.R
+import com.example.popularreddit.models.appsettings.model.AppSettings
 import com.example.popularreddit.ui.DarkGrey
 import com.example.popularreddit.ui.MainBlue
+import com.m.andrii.phonicsabc.models.appsettings.model.AppSettingsPrefs
 
 @Composable
-fun MainScreen() {
+fun MainScreen(settingsStore: AppSettingsPrefs) {
 
     val orientation = LocalConfiguration.current.orientation
+
+    val infoBannerClosed = rememberSaveable { mutableStateOf(true) }
+
+    LaunchedEffect(true) {
+        settingsStore.getSettings().collect { settings ->
+            infoBannerClosed.value = settings.infoBannerClosed
+        }
+    }
+    LaunchedEffect(key1 = infoBannerClosed.value) {
+        settingsStore.getSettings().collect { settings ->
+            if (infoBannerClosed.value != settings.infoBannerClosed)
+                settingsStore.putSettings(AppSettings(infoBannerClosed = infoBannerClosed.value))
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -69,8 +92,8 @@ fun MainScreen() {
                 RedditTopBar()
 
                 when (orientation) {
-                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical()
-                    else -> RedditContentHorizontal()
+                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(infoBannerClosed)
+                    else -> RedditContentHorizontal(infoBannerClosed)
                 }
             }
 
@@ -86,17 +109,27 @@ fun MainScreen() {
 }
 
 @Composable
-private fun RedditContentVertical() {
+private fun RedditContentVertical(infoBannerClosed: MutableState<Boolean>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 50.dp),
+            .padding(bottom = 50.dp)
+            .animateContentSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(40.dp)
     ) {
+
         item {
-            InformationBanner {}
+            AnimatedVisibility(
+                visible = !infoBannerClosed.value,
+                enter = slideInHorizontally (initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
+                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> 2 * fullWidth }) + fadeOut()
+            ) {
+                InformationBanner()
+                { infoBannerClosed.value = true }
+            }
         }
+
         items(20) {
             RedditCardVertical()
         }
@@ -104,18 +137,34 @@ private fun RedditContentVertical() {
 }
 
 @Composable
-private fun RedditContentHorizontal() {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(end = 50.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(50.dp)
-    ) {
-        items(20) {
-            RedditCardHorizontal()
+private fun RedditContentHorizontal(infoBannerClosed: MutableState<Boolean>) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 50.dp)
+                .animateContentSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(50.dp)
+        ) {
+            item {
+                AnimatedVisibility(
+                    visible = !infoBannerClosed.value,
+                    enter = slideInHorizontally (initialOffsetX = { fullWidth -> 2 * fullWidth }) + fadeIn(),
+                    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> 2 * fullWidth }) + fadeOut()
+                ) {
+                    InformationBanner()
+                    { infoBannerClosed.value = true }
+                }
+            }
+
+            items(20) {
+                RedditCardHorizontal()
+            }
         }
+
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -318,59 +367,120 @@ private fun RedditCardHorizontal() {
 }
 
 @Composable
-private fun InformationBanner(onCloseButtonClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(top = 15.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .wrapContentHeight()
-                .shadow(14.dp, shape = RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFFFF4500)),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Image(
+private fun InformationBanner(modifier: Modifier = Modifier, onCloseButtonClick: () -> Unit) {
+
+    val orientation = LocalConfiguration.current.orientation
+
+    when (orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .width(35.dp)
+                    .wrapContentWidth()
                     .wrapContentHeight()
-                    .padding(top = 8.dp, end = 15.dp)
-                    .clickable { onCloseButtonClick() },
-                painter = painterResource(id = R.drawable.icon_close),
-                contentDescription = null
-            )
-            Row(
-                modifier = Modifier.wrapContentHeight(),
-                verticalAlignment = Alignment.CenterVertically
-            )
-            {
+                    .padding(top = 15.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = modifier
+                        .fillMaxWidth(0.9f)
+                        .wrapContentHeight()
+                        .shadow(14.dp, shape = RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFFF4500)),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .width(35.dp)
+                            .wrapContentHeight()
+                            .padding(top = 8.dp, end = 15.dp)
+                            .clickable { onCloseButtonClick() },
+                        painter = painterResource(id = R.drawable.icon_close),
+                        contentDescription = null
+                    )
+                    Row(
+                        modifier = Modifier.wrapContentHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    )
+                    {
+                        Image(
+                            modifier = Modifier
+                                .width(70.dp)
+                                .wrapContentHeight()
+                                .padding(horizontal = 14.dp),
+                            painter = painterResource(id = R.drawable.icon_star),
+                            contentDescription = null
+                        )
+                        Text(
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .padding(end = 14.dp),
+                            text = stringResource(R.string.info_banner_text),
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontStyle = FontStyle.Normal,
+                            fontFamily = FontFamily(Font(R.font.spartan))
+                        )
+
+                    }
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+            }
+        }
+
+        else -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(0.8f)
+                    .aspectRatio(1f)
+                    .padding(start = 20.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .shadow(14.dp, shape = RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFFF4500)),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Image(
+                        modifier = Modifier
+                            .width(70.dp)
+                            .wrapContentHeight()
+                            .padding(horizontal = 14.dp),
+                        painter = painterResource(id = R.drawable.icon_star),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .padding(horizontal = 14.dp),
+                        textAlign = TextAlign.Center,
+                        text = stringResource(R.string.info_banner_text),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontStyle = FontStyle.Normal,
+                        fontFamily = FontFamily(Font(R.font.spartan))
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Image(
                     modifier = Modifier
-                        .width(70.dp)
+                        .align(Alignment.TopEnd)
+                        .width(35.dp)
                         .wrapContentHeight()
-                        .padding(horizontal = 14.dp),
-                    painter = painterResource(id = R.drawable.icon_star),
+                        .padding(top = 8.dp, end = 15.dp)
+                        .clickable { onCloseButtonClick() },
+                    painter = painterResource(id = R.drawable.icon_close),
                     contentDescription = null
                 )
-                Text(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(end = 14.dp),
-                    text = stringResource(R.string.info_banner_text),
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontStyle = FontStyle.Normal,
-                    fontFamily = FontFamily(Font(R.font.spartan))
-                )
-
             }
-            Spacer(modifier = Modifier.height(14.dp))
         }
     }
+
+
 }

@@ -10,8 +10,17 @@ import androidx.navigation.compose.rememberNavController
 import com.example.popularreddit.models.Screen
 import com.example.popularreddit.ui.screens.MainScreen
 import com.example.popularreddit.ui.screens.SplashScreen
+import com.m.andrii.phonicsabc.models.appsettings.model.AppSettingsPrefs
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class RedditActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsStore: AppSettingsPrefs
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -26,7 +35,7 @@ class RedditActivity : ComponentActivity() {
                 }
 
                 composable(route = Screen.Main.route) {
-                    MainScreen()
+                    MainScreen(settingsStore = settingsStore)
                 }
             }
         }
