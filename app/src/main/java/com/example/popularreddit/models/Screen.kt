@@ -1,4 +1,4 @@
-package com.example.popularreddit
+package com.example.popularreddit.models
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash_screen")

@@ -7,10 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.popularreddit.models.Screen
 import com.example.popularreddit.ui.screens.MainScreen
 import com.example.popularreddit.ui.screens.SplashScreen
 
-class MainActivity : ComponentActivity() {
+class RedditActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

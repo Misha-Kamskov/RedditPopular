@@ -286,10 +286,12 @@ private fun RedditCardHorizontal() {
                     end = 10.dp
                 )
             ) {
-                Box(
+                Image(
                     modifier = Modifier
-                        .size(20.dp)
-                        .background(MainBlue)
+                        .width(25.dp)
+                        .wrapContentHeight(),
+                    painter = painterResource(id = R.drawable.icon_comment),
+                    contentDescription = null
                 )
                 Spacer(modifier = Modifier.width(5.dp))
 
@@ -302,12 +304,14 @@ private fun RedditCardHorizontal() {
 
             }
 
-            Box(
+            Image(
                 modifier = Modifier
+                    .width(20.dp)
+                    .wrapContentHeight()
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 5.dp)
-                    .size(20.dp)
-                    .background(MainBlue)
+                    .padding(bottom = 5.dp),
+                painter = painterResource(id = R.drawable.icon_not_saved),
+                contentDescription = null
             )
         }
     }
@@ -355,7 +359,9 @@ private fun InformationBanner(onCloseButtonClick: () -> Unit) {
                     contentDescription = null
                 )
                 Text(
-                    modifier = Modifier.wrapContentWidth().padding(end = 14.dp),
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(end = 14.dp),
                     text = stringResource(R.string.info_banner_text),
                     color = Color.White,
                     fontSize = 16.sp,

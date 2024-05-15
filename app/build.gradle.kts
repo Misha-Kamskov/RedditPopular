@@ -50,6 +50,8 @@ android {
 }
 
 dependencies {
+    // Modules
+    implementation(project(":mvi"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
