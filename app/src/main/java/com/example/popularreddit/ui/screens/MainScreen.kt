@@ -48,7 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -177,7 +176,7 @@ private fun RedditTopBar() {
                     modifier = Modifier
                         .size(50.dp)
                         .padding(vertical = 3.dp),
-                    painter = painterResource(id = R.drawable.reddit_logo),
+                    painter = painterResource(id = R.drawable.reddit_bar_logo),
                     contentDescription = null
                 )
                 Spacer(modifier = Modifier.width(7.dp))

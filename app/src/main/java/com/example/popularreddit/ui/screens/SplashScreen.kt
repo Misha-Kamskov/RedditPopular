@@ -80,7 +80,7 @@ fun SplashScreen(navController: NavController) {
             }
             Image(
                 modifier = imageModifier,
-                painter = painterResource(id = R.drawable.reddit_logo),
+                painter = painterResource(id = R.drawable.reddit_bar_logo),
                 contentDescription = null
             )
         }

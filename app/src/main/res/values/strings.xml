@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PopularReddit</string>
+    <string name="app_name">Reddit Popular</string>
     <string name="info_banner_text">This is a client application for her that displays top publications. You have the ability to save content to the gallery.</string>
     <string name="reddit_popular">Reddit Popular</string>
 </resources>
