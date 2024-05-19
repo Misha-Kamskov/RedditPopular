@@ -32,7 +32,10 @@ data class GetPostResponseEntity(
     @SerializedName("fallback_url")
     val videoUrl: String?,
 
-    ) {
+    @SerializedName("media")
+    val media: MediaResponse?
+
+) {
     fun toPost(): Post {
         return Post(
             authorName = author,
@@ -43,7 +46,7 @@ data class GetPostResponseEntity(
             widthThumbnail = thumbnailWidth,
             heightThumbnail = thumbnailHeight,
             isVideo = isVideo,
-            videoUrl = videoUrl
+            videoUrl = media?.redditVideo?.fallbackUrl
         )
     }
 }

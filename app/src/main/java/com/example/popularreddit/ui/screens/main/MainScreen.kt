@@ -1,7 +1,9 @@
 package com.example.popularreddit.ui.screens.main
 
 import android.content.res.Configuration
+import android.util.Log
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
@@ -85,6 +87,7 @@ import com.example.popularreddit.ui.common.DarkGrey
 import com.example.popularreddit.ui.common.MainBlue
 import com.example.popularreddit.models.appsettings.model.AppSettingsPrefs
 import com.example.popularreddit.models.posts.entities.Post
+import com.example.popularreddit.ui.common.video.Player
 import kotlinx.coroutines.launch
 
 @Composable
@@ -131,16 +134,18 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                 RedditTopBar()
 
                 when (orientation) {
-                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
-                        posts = posts,
-                        listState = listState,
-                        infoBannerClosed = infoBannerClosed,
-                        onCardImageClick = { url ->
-                            url?.let {
-                                currentFullImageUrl = url
-                                fullScreenImageVisibility = true
-                            }
-                        })
+                    Configuration.ORIENTATION_PORTRAIT -> {
+                        RedditContentVertical(
+                            posts = posts,
+                            listState = listState,
+                            infoBannerClosed = infoBannerClosed,
+                            onCardImageClick = { url ->
+                                url?.let {
+                                    currentFullImageUrl = url
+                                    fullScreenImageVisibility = true
+                                }
+                            })
+                    }
 
                     else -> RedditContentHorizontal(posts = posts,
                         listState = listState,
@@ -331,7 +336,6 @@ private fun RedditCardVertical(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight()
     ) {
         Row(
             modifier = Modifier
@@ -357,9 +361,9 @@ private fun RedditCardVertical(
             post.heightThumbnail != null && post.widthThumbnail != null && post.urlDest != null
 
         if (post.isVideo) {
-            post.videoUrl?.let {
 
-            }
+            post.videoUrl?.let { Player(it) }
+
         } else {
             val ratio = post.heightThumbnail?.let { post.widthThumbnail?.div(it) }
             if (isImageExists && ratio != null) {
@@ -460,28 +464,33 @@ private fun RedditCardHorizontal(
         val isImageExists =
             post.heightThumbnail != null && post.widthThumbnail != null && post.urlDest != null
         val ratio = post.heightThumbnail?.let { post.widthThumbnail?.div(it) }
+        if (post.isVideo) {
 
-        if (isImageExists && ratio != null) {
-            Image(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(ratio)
-                    .align(Alignment.CenterVertically)
-                    .clickable {
-                        onCardImageClick(post.urlDest ?: post.thumbnail)
-                    },
-                contentScale = ContentScale.FillBounds,
-                painter = rememberAsyncImagePainter(post.urlDest ?: post.thumbnail),
-                contentDescription = null
-            )
+            post.videoUrl?.let { Player(it) }
+
         } else {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.no_image_or_video),
-                    color = Color.Black,
-                    fontSize = 18.sp,
-                    fontFamily = FontFamily(Font(R.font.spartan_medium))
+            if (isImageExists && ratio != null) {
+                Image(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(ratio)
+                        .align(Alignment.CenterVertically)
+                        .clickable {
+                            onCardImageClick(post.urlDest ?: post.thumbnail)
+                        },
+                    contentScale = ContentScale.FillBounds,
+                    painter = rememberAsyncImagePainter(post.urlDest ?: post.thumbnail),
+                    contentDescription = null
                 )
+            } else {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.no_image_or_video),
+                        color = Color.Black,
+                        fontSize = 18.sp,
+                        fontFamily = FontFamily(Font(R.font.spartan_medium))
+                    )
+                }
             }
         }
 
