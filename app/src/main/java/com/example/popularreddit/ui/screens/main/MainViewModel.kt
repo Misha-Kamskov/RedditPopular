@@ -1,12 +1,11 @@
 package com.example.popularreddit.ui.screens.main
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.example.mvi.MviViewModel
 import com.example.mvi.states.AbstractAction
 import com.example.mvi.states.AbstractEvent
 import com.example.mvi.states.AbstractState
-import com.example.popularreddit.models.Screen
+import com.example.popularreddit.R
 import com.example.popularreddit.models.posts.PostsRepository
 import com.example.popularreddit.models.posts.entities.Post
 import com.example.popularreddit.source.BackendException
@@ -43,17 +42,10 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 updateState(MainState(loading = false, retryButtonVisible = true))
                 when (e) {
-                    is ConnectionException -> {
-                        sendEvent(MainEvent.ShowError("No internet"))
-                    }
+                    is ConnectionException -> sendEvent(MainEvent.ShowError(R.string.error_message_connection))
+                    is BackendException -> sendEvent(MainEvent.ShowError(R.string.error_message_backend_exception))
+                    is ParseBackendResponseException -> sendEvent(MainEvent.ShowError(R.string.error_message_parse_exception))
 
-                    is BackendException -> {
-                        sendEvent(MainEvent.ShowError("Something went wrong..."))
-                    }
-
-                    is ParseBackendResponseException -> {
-                        sendEvent(MainEvent.ShowError("Something went wrong..."))
-                    }
                 }
             }
         }
@@ -68,7 +60,7 @@ class MainState(
 ) : AbstractState()
 
 sealed class MainEvent : AbstractEvent() {
-    data class ShowError(val message: String) : MainEvent()
+    data class ShowError(val message: Int) : MainEvent()
 }
 
 sealed class MainAction : AbstractAction() {

@@ -4,4 +4,10 @@
     <string name="reddit_popular">Reddit Popular</string>
     <string name="no_image_or_video">No image or video</string>
     <string name="image_is_not_available">You can\'t save image because it is not available.</string>
+
+    <string name="error_message_connection">No internet</string>
+    <string name="error_message_backend_exception">Something went wrong...</string>
+    <string name="error_message_parse_exception">Something went wrong...</string>
+    <string name="retry">Retry</string>
+
 </resources>

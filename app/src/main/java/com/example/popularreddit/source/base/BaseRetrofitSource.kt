@@ -30,16 +30,12 @@ open class BaseRetrofitSource(
         return try {
             block()
         } catch (e: AppException) {
-            Log.d("AAA", "${e.message.toString()} and AppException")
             throw e
         } catch (e: JsonDataException) {
-            Log.d("AAA", "${e.message.toString()} and JsonDataException")
             throw ParseBackendResponseException(e)
         } catch (e: HttpException) {
-            Log.d("AAA", "${e.message.toString()} and HttpException")
             throw createBackendException(e)
         } catch (e: IOException) {
-            Log.d("AAA", "${e.message.toString()} and ConnectionException")
             throw ConnectionException(e)
         }
     }
@@ -49,7 +45,7 @@ open class BaseRetrofitSource(
             val errorBody: ErrorResponseBody = errorAdapter.fromJson(
                 e.response()!!.errorBody()!!.string()
             )!!
-            BackendException(e.code(), errorBody.error)
+            BackendException(errorBody.error)
         } catch (e: Exception) {
             throw ParseBackendResponseException(e)
         }

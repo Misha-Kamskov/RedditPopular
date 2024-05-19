@@ -35,8 +35,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,7 +71,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.popularreddit.ui.common.FullScreenPhoto
 import com.example.popularreddit.R
@@ -83,16 +85,26 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
 
-    val orientation = LocalConfiguration.current.orientation
-
-    val infoBannerClosed = rememberSaveable { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
 
     val state by mainViewModel.state.collectAsState()
 
-    val scope = rememberCoroutineScope()
+    val orientation = LocalConfiguration.current.orientation
+    val infoBannerClosed = rememberSaveable { mutableStateOf(true) }
+    var currentFullImageUrl by rememberSaveable { mutableStateOf("") }
+    var fullScreenImageVisibility by rememberSaveable { mutableStateOf(false) }
+    var needGetTopPosts by rememberSaveable { mutableStateOf(true) }
+
+    val listState = rememberSaveable(saver = LazyListState.Saver) {
+        LazyListState()
+    }
+
 
     LaunchedEffect(key1 = true) {
-        mainViewModel.applyAction(MainAction.GetTopPosts)
+        if (needGetTopPosts) {
+            mainViewModel.applyAction(MainAction.GetTopPosts)
+            needGetTopPosts = false
+        }
     }
 
     LaunchedEffect(true) {
@@ -107,10 +119,6 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
         }
     }
 
-    var currentFullImageUrl by rememberSaveable { mutableStateOf("") }
-    var fullScreenImageVisibility by rememberSaveable { mutableStateOf(false) }
-
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color.White,
@@ -124,6 +132,7 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                     when (orientation) {
                         Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
                             data = state,
+                            listState = listState,
                             infoBannerClosed = infoBannerClosed,
                             onCardImageClick = { url ->
                                 url?.let {
@@ -132,7 +141,9 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                                 }
                             })
 
-                        else -> RedditContentHorizontal(data = state, infoBannerClosed,
+                        else -> RedditContentHorizontal(data = state,
+                            listState = listState,
+                            infoBannerClosed,
                             onCardImageClick = { url ->
                                 url?.let {
                                     currentFullImageUrl = url
@@ -156,7 +167,6 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                 visible = fullScreenImageVisibility, enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut(),
             ) {
-                //Full Screen Image
                 FullScreenPhoto(
                     imageUrl = currentFullImageUrl,
                     onDismiss = { fullScreenImageVisibility = false })
@@ -174,7 +184,7 @@ private fun MainEventsProcessor(
     val context = LocalContext.current
     when (val event = viewModel.event.collectAsState(initial = null).value) {
         is MainEvent.ShowError -> {
-            Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, stringResource(id = event.message), Toast.LENGTH_SHORT).show()
         }
 
         else -> {}
@@ -184,10 +194,12 @@ private fun MainEventsProcessor(
 @Composable
 private fun RedditContentVertical(
     data: MainState,
+    listState: LazyListState,
     infoBannerClosed: MutableState<Boolean>,
     onCardImageClick: (imageUrl: String?) -> Unit
 ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = 50.dp)
@@ -218,11 +230,13 @@ private fun RedditContentVertical(
 @Composable
 private fun RedditContentHorizontal(
     data: MainState,
+    listState: LazyListState,
     infoBannerClosed: MutableState<Boolean>,
     onCardImageClick: (imageId: String?) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         LazyRow(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(end = 50.dp)
@@ -683,16 +697,15 @@ private fun LoadingAnaRefreshScreen(
                 contentDescription = null
             )
         } else if (retryButtonVisible) {
-            Box(
+            ElevatedButton(
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(15.dp))
-                    .background(MainBlue)
-                    .clip(RoundedCornerShape(15.dp))
-                    .clickable { onRetryButtonClick() }, contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(15.dp)),
+                onClick = { onRetryButtonClick() },
+                colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
             ) {
                 Text(
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
-                    text = "Retry",
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 20.dp),
+                    text = stringResource(R.string.retry),
                     color = Color.White,
                     fontSize = 16.sp,
                     fontStyle = FontStyle.Normal,
@@ -701,7 +714,6 @@ private fun LoadingAnaRefreshScreen(
             }
         }
     }
-
 }
 
 
