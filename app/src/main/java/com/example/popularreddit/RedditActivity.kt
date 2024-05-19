@@ -4,13 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.popularreddit.models.Screen
-import com.example.popularreddit.ui.screens.MainScreen
-import com.example.popularreddit.ui.screens.SplashScreen
-import com.m.andrii.phonicsabc.models.appsettings.model.AppSettingsPrefs
+import com.example.popularreddit.ui.screens.main.MainScreen
+import com.example.popularreddit.ui.screens.main.MainViewModel
+import com.example.popularreddit.ui.screens.splash.SplashScreen
+import com.example.popularreddit.models.appsettings.model.AppSettingsPrefs
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -26,6 +28,7 @@ class RedditActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
+
             NavHost(
                 navController = navController,
                 startDestination = Screen.Splash.route
@@ -35,7 +38,8 @@ class RedditActivity : ComponentActivity() {
                 }
 
                 composable(route = Screen.Main.route) {
-                    MainScreen(settingsStore = settingsStore)
+                    val mainViewModel: MainViewModel = hiltViewModel()
+                    MainScreen(mainViewModel = mainViewModel, settingsStore = settingsStore)
                 }
             }
         }

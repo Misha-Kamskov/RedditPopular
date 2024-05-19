@@ -3,7 +3,7 @@ package com.example.popularreddit.models.appsettings
 import android.content.Context
 import androidx.datastore.dataStore
 import com.example.popularreddit.models.appsettings.model.AppSettings
-import com.m.andrii.phonicsabc.models.appsettings.model.AppSettingsPrefs
+import com.example.popularreddit.models.appsettings.model.AppSettingsPrefs
 
 class AppSettingsProtoDataStore(private val context: Context) : AppSettingsPrefs {
 

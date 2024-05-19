@@ -2,4 +2,6 @@
     <string name="app_name">Reddit Popular</string>
     <string name="info_banner_text">This is a client application for her that displays top publications. You have the ability to save content to the gallery.</string>
     <string name="reddit_popular">Reddit Popular</string>
+    <string name="no_image_or_video">No image or video</string>
+    <string name="image_is_not_available">You can\'t save image because it is not available.</string>
 </resources>
