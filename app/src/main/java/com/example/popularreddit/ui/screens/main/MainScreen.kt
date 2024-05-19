@@ -359,11 +359,8 @@ private fun RedditCardVertical(
                     .clickable {
                         coroutineScope.launch {
                             if (isImageExists) {
-                                coroutineScope.launch {
-                                    (post.urlDest ?: post.thumbnail)?.let {
-                                        Utils.downloadImage(context, it, it)
-                                    }
-
+                                (post.urlDest ?: post.thumbnail)?.let {
+                                    Utils.downloadImage(context, it, "reddit")
                                 }
                             } else {
                                 Toast
@@ -390,7 +387,6 @@ private fun RedditCardHorizontal(
 ) {
 
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     Row(
         modifier = Modifier
@@ -500,11 +496,8 @@ private fun RedditCardHorizontal(
                     .padding(bottom = 5.dp)
                     .clickable {
                         if (isImageExists) {
-                            coroutineScope.launch {
-                                (post.urlDest ?: post.thumbnail)?.let {
-                                    Utils.downloadImage(context, it, it)
-                                }
-
+                            (post.urlDest ?: post.thumbnail)?.let {
+                                Utils.downloadImage(context, it, "reddit")
                             }
                         } else {
                             Toast

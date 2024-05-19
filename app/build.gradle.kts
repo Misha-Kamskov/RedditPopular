@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.popularreddit"
-        minSdk = 24
+        minSdk = 27
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -74,6 +74,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation ("androidx.work:work-runtime-ktx:2.7.1")
+
 
     //Datastore
     implementation(libs.androidx.datastore)

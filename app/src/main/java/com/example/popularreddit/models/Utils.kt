@@ -27,7 +27,7 @@ object Utils {
             .setTitle("Downloading image")
             .setDescription("Downloading $imageName")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES, imageName)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, imageName)
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
 
