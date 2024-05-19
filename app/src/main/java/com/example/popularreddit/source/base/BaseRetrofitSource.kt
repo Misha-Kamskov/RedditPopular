@@ -1,5 +1,6 @@
 package com.example.popularreddit.source.base
 
+import android.util.Log
 import com.example.popularreddit.source.AppException
 import com.example.popularreddit.source.BackendException
 import com.example.popularreddit.source.ConnectionException
@@ -29,12 +30,16 @@ open class BaseRetrofitSource(
         return try {
             block()
         } catch (e: AppException) {
+            Log.d("AAA", "${e.message.toString()} and AppException")
             throw e
         } catch (e: JsonDataException) {
+            Log.d("AAA", "${e.message.toString()} and JsonDataException")
             throw ParseBackendResponseException(e)
         } catch (e: HttpException) {
+            Log.d("AAA", "${e.message.toString()} and HttpException")
             throw createBackendException(e)
         } catch (e: IOException) {
+            Log.d("AAA", "${e.message.toString()} and ConnectionException")
             throw ConnectionException(e)
         }
     }

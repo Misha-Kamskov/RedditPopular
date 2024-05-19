@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.popularreddit.ui.common.FullScreenPhoto
 import com.example.popularreddit.R
@@ -87,6 +88,8 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
     val infoBannerClosed = rememberSaveable { mutableStateOf(true) }
 
     val state by mainViewModel.state.collectAsState()
+
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = true) {
         mainViewModel.applyAction(MainAction.GetTopPosts)
@@ -117,7 +120,7 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
 
                 RedditTopBar()
 
-                if (state.posts.isNotEmpty()) {
+                if ((!state.loading || !state.retryButtonVisible) && state.posts.isNotEmpty()) {
                     when (orientation) {
                         Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
                             data = state,
@@ -138,7 +141,14 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                             })
                     }
                 } else {
-                    LoadingScreen()
+                    LoadingAnaRefreshScreen(
+                        loading = state.loading,
+                        retryButtonVisible = state.retryButtonVisible
+                    ) {
+                        scope.launch {
+                            mainViewModel.applyAction(MainAction.GetTopPosts)
+                        }
+                    }
                 }
 
             }
@@ -152,6 +162,22 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
                     onDismiss = { fullScreenImageVisibility = false })
             }
         }
+
+        MainEventsProcessor(viewModel = mainViewModel)
+    }
+}
+
+@Composable
+private fun MainEventsProcessor(
+    viewModel: MainViewModel,
+) {
+    val context = LocalContext.current
+    when (val event = viewModel.event.collectAsState(initial = null).value) {
+        is MainEvent.ShowError -> {
+            Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+        }
+
+        else -> {}
     }
 }
 
@@ -635,7 +661,11 @@ private fun InformationBanner(modifier: Modifier = Modifier, onCloseButtonClick:
 }
 
 @Composable
-private fun LoadingScreen() {
+private fun LoadingAnaRefreshScreen(
+    loading: Boolean,
+    retryButtonVisible: Boolean,
+    onRetryButtonClick: () -> Unit
+) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val angle by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -644,14 +674,34 @@ private fun LoadingScreen() {
         label = ""
     )
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Image(
-            modifier = Modifier
-                .size(50.dp)
-                .rotate(angle),
-            painter = painterResource(id = R.drawable.reddit_bar_logo),
-            contentDescription = null
-        )
+        if (loading) {
+            Image(
+                modifier = Modifier
+                    .size(50.dp)
+                    .rotate(angle),
+                painter = painterResource(id = R.drawable.reddit_bar_logo),
+                contentDescription = null
+            )
+        } else if (retryButtonVisible) {
+            Box(
+                modifier = Modifier
+                    .shadow(8.dp, RoundedCornerShape(15.dp))
+                    .background(MainBlue)
+                    .clip(RoundedCornerShape(15.dp))
+                    .clickable { onRetryButtonClick() }, contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+                    text = "Retry",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontStyle = FontStyle.Normal,
+                    fontFamily = FontFamily(Font(R.font.spartan))
+                )
+            }
+        }
     }
+
 }
 
 
