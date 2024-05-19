@@ -106,6 +106,11 @@ dependencies {
     implementation (libs.androidx.media3.exoplayer.v100beta02)
     implementation (libs.androidx.media3.ui.v100beta02)
 
+    //Paging
+    implementation (libs.androidx.paging.runtime)
+    implementation (libs.androidx.paging.compose)
+
+
 
 
 }

@@ -10,7 +10,7 @@ class RetrofitPostsSource(config: RetrofitConfig) : BaseRetrofitSource(config), 
 
     private val postsApi = retrofit.create(PostsApi::class.java)
 
-    override suspend fun getTopPosts(): ApiResponse = wrapRetrofitExceptions {
-        postsApi.getTopPosts()
+    override suspend fun getTopPosts(after : String?): ApiResponse = wrapRetrofitExceptions {
+        postsApi.getTopPosts(after)
     }
 }

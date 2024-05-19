@@ -1,6 +1,8 @@
 package com.example.popularreddit.ui.screens.main
 
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.mvi.MviViewModel
 import com.example.mvi.states.AbstractAction
 import com.example.mvi.states.AbstractEvent
@@ -12,15 +14,16 @@ import com.example.popularreddit.source.BackendException
 import com.example.popularreddit.source.ConnectionException
 import com.example.popularreddit.source.ParseBackendResponseException
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val postsRepository: PostsRepository
-) :
-    MviViewModel<MainState, MainEvent, MainAction>() {
+) : MviViewModel<MainState, MainEvent, MainAction>() {
 
     override val initialState: MainState
         get() = MainState()
@@ -33,30 +36,23 @@ class MainViewModel @Inject constructor(
 
     private fun getTopPosts() {
         viewModelScope.launch {
-            val posts: List<Post>
-            updateState(MainState(loading = true))
-            delay(1000)
             try {
-                posts = postsRepository.getTopPosts()
-                updateState(MainState(posts, loading = false, retryButtonVisible = false))
+                val postsFlow = postsRepository.getTopPosts()
+                updateState(MainState(posts = postsFlow))
             } catch (e: Exception) {
-                updateState(MainState(loading = false, retryButtonVisible = true))
+                updateState(MainState())
                 when (e) {
                     is ConnectionException -> sendEvent(MainEvent.ShowError(R.string.error_message_connection))
                     is BackendException -> sendEvent(MainEvent.ShowError(R.string.error_message_backend_exception))
                     is ParseBackendResponseException -> sendEvent(MainEvent.ShowError(R.string.error_message_parse_exception))
-
                 }
             }
         }
     }
 }
 
-
 class MainState(
-    val posts: List<Post> = emptyList(),
-    val loading: Boolean = true,
-    val retryButtonVisible: Boolean = false
+    val posts: Flow<PagingData<Post>> = emptyFlow()
 ) : AbstractState()
 
 sealed class MainEvent : AbstractEvent() {

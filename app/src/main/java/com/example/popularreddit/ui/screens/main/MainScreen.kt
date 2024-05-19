@@ -33,10 +33,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
@@ -71,6 +73,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.rememberAsyncImagePainter
 import com.example.popularreddit.ui.common.FullScreenPhoto
 import com.example.popularreddit.R
@@ -85,20 +90,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
 
-    val scope = rememberCoroutineScope()
-
     val state by mainViewModel.state.collectAsState()
+    val posts = state.posts.collectAsLazyPagingItems()
 
     val orientation = LocalConfiguration.current.orientation
-    val infoBannerClosed = rememberSaveable { mutableStateOf(true) }
+    val infoBannerClosed = rememberSaveable { mutableStateOf(false) }
     var currentFullImageUrl by rememberSaveable { mutableStateOf("") }
     var fullScreenImageVisibility by rememberSaveable { mutableStateOf(false) }
     var needGetTopPosts by rememberSaveable { mutableStateOf(true) }
 
-    val listState = rememberSaveable(saver = LazyListState.Saver) {
-        LazyListState()
-    }
-
+    val listState = rememberLazyListState()
 
     LaunchedEffect(key1 = true) {
         if (needGetTopPosts) {
@@ -109,9 +110,10 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
 
     LaunchedEffect(true) {
         settingsStore.getSettings().collect { settings ->
-            infoBannerClosed.value = settings.infoBannerClosed
+            //infoBannerClosed.value = settings.infoBannerClosed
         }
     }
+
     LaunchedEffect(key1 = infoBannerClosed.value) {
         settingsStore.getSettings().collect { settings ->
             if (infoBannerClosed.value != settings.infoBannerClosed)
@@ -128,38 +130,27 @@ fun MainScreen(mainViewModel: MainViewModel, settingsStore: AppSettingsPrefs) {
 
                 RedditTopBar()
 
-                if ((!state.loading || !state.retryButtonVisible) && state.posts.isNotEmpty()) {
-                    when (orientation) {
-                        Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
-                            data = state,
-                            listState = listState,
-                            infoBannerClosed = infoBannerClosed,
-                            onCardImageClick = { url ->
-                                url?.let {
-                                    currentFullImageUrl = url
-                                    fullScreenImageVisibility = true
-                                }
-                            })
+                when (orientation) {
+                    Configuration.ORIENTATION_PORTRAIT -> RedditContentVertical(
+                        posts = posts,
+                        listState = listState,
+                        infoBannerClosed = infoBannerClosed,
+                        onCardImageClick = { url ->
+                            url?.let {
+                                currentFullImageUrl = url
+                                fullScreenImageVisibility = true
+                            }
+                        })
 
-                        else -> RedditContentHorizontal(data = state,
-                            listState = listState,
-                            infoBannerClosed,
-                            onCardImageClick = { url ->
-                                url?.let {
-                                    currentFullImageUrl = url
-                                    fullScreenImageVisibility = true
-                                }
-                            })
-                    }
-                } else {
-                    LoadingAnaRefreshScreen(
-                        loading = state.loading,
-                        retryButtonVisible = state.retryButtonVisible
-                    ) {
-                        scope.launch {
-                            mainViewModel.applyAction(MainAction.GetTopPosts)
-                        }
-                    }
+                    else -> RedditContentHorizontal(posts = posts,
+                        listState = listState,
+                        infoBannerClosed,
+                        onCardImageClick = { url ->
+                            url?.let {
+                                currentFullImageUrl = url
+                                fullScreenImageVisibility = true
+                            }
+                        })
                 }
 
             }
@@ -193,15 +184,17 @@ private fun MainEventsProcessor(
 
 @Composable
 private fun RedditContentVertical(
-    data: MainState,
+    posts: LazyPagingItems<Post>,
     listState: LazyListState,
     infoBannerClosed: MutableState<Boolean>,
     onCardImageClick: (imageUrl: String?) -> Unit
 ) {
+
+
     LazyColumn(
         state = listState,
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(bottom = 50.dp)
             .animateContentSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -219,9 +212,24 @@ private fun RedditContentVertical(
             }
         }
 
-        items(20) {
-            RedditCardVertical(post = data.posts[it]) { contentUrl ->
-                onCardImageClick(contentUrl)
+        items(posts.itemCount) {
+            posts[it]?.let { post ->
+                RedditCardVertical(post = post) { imageId ->
+                    onCardImageClick(imageId)
+                }
+            }
+        }
+        item {
+            when (posts.loadState.refresh) {
+                is LoadState.Loading -> {
+                    LoadingItem()
+                }
+
+                is LoadState.NotLoading, is LoadState.Error -> {
+                    ErrorItem(stringResource(id = R.string.error_message_connection)) { posts.retry() }
+                }
+
+                else -> {}
             }
         }
     }
@@ -229,7 +237,7 @@ private fun RedditContentVertical(
 
 @Composable
 private fun RedditContentHorizontal(
-    data: MainState,
+    posts: LazyPagingItems<Post>,
     listState: LazyListState,
     infoBannerClosed: MutableState<Boolean>,
     onCardImageClick: (imageId: String?) -> Unit
@@ -255,16 +263,31 @@ private fun RedditContentHorizontal(
                 }
             }
 
-            items(20) {
-                RedditCardHorizontal(
-                    post = data.posts[it]
-                ) { imageId ->
-                    onCardImageClick(imageId)
+            items(posts.itemCount) {
+                posts[it]?.let { post ->
+                    RedditCardHorizontal(post = post) { imageId ->
+                        onCardImageClick(imageId)
+                    }
+                }
+            }
+
+            item {
+                when (posts.loadState.refresh) {
+                    is LoadState.Loading -> {
+                        LoadingItem()
+                    }
+
+                    is LoadState.NotLoading, is LoadState.Error -> {
+                        ErrorItem(stringResource(id = R.string.error_message_connection)) { posts.retry() }
+                    }
+
+                    else -> {}
                 }
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -675,11 +698,7 @@ private fun InformationBanner(modifier: Modifier = Modifier, onCloseButtonClick:
 }
 
 @Composable
-private fun LoadingAnaRefreshScreen(
-    loading: Boolean,
-    retryButtonVisible: Boolean,
-    onRetryButtonClick: () -> Unit
-) {
+private fun LoadingItem() {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val angle by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -687,31 +706,49 @@ private fun LoadingAnaRefreshScreen(
         animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Restart),
         label = ""
     )
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        if (loading) {
-            Image(
-                modifier = Modifier
-                    .size(50.dp)
-                    .rotate(angle),
-                painter = painterResource(id = R.drawable.reddit_bar_logo),
-                contentDescription = null
+    Box(modifier = Modifier.wrapContentSize(), contentAlignment = Alignment.Center) {
+        Image(
+            modifier = Modifier
+                .padding(8.dp)
+                .size(50.dp)
+                .rotate(angle),
+            painter = painterResource(id = R.drawable.reddit_bar_logo),
+            contentDescription = null
+        )
+    }
+}
+
+@Composable
+fun ErrorItem(message: String, onClickRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .wrapContentSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier.padding(8.dp),
+            text = message,
+            color = Color.Black,
+            fontSize = 16.sp,
+            fontStyle = FontStyle.Normal,
+            fontFamily = FontFamily(Font(R.font.spartan))
+        )
+        ElevatedButton(
+            modifier = Modifier
+                .clip(RoundedCornerShape(15.dp)),
+            onClick = { onClickRetry() },
+            colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
+        ) {
+            Text(
+                modifier = Modifier.padding(vertical = 10.dp, horizontal = 20.dp),
+                text = stringResource(R.string.retry),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontStyle = FontStyle.Normal,
+                fontFamily = FontFamily(Font(R.font.spartan))
             )
-        } else if (retryButtonVisible) {
-            ElevatedButton(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(15.dp)),
-                onClick = { onRetryButtonClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
-            ) {
-                Text(
-                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 20.dp),
-                    text = stringResource(R.string.retry),
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontStyle = FontStyle.Normal,
-                    fontFamily = FontFamily(Font(R.font.spartan))
-                )
-            }
         }
     }
 }

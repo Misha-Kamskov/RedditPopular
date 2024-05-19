@@ -4,6 +4,6 @@ import com.example.popularreddit.source.posts.ApiResponse
 
 interface PostsSource {
 
-    suspend fun getTopPosts(): ApiResponse
+    suspend fun getTopPosts(after : String?): ApiResponse
 
 }

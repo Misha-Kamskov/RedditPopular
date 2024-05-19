@@ -2,11 +2,14 @@ package com.example.popularreddit.source.posts
 
 import com.example.popularreddit.source.posts.entities.GetPostResponseEntity
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 interface PostsApi {
 
     @GET("/top/.json")
-    suspend fun getTopPosts(): ApiResponse
+    suspend fun getTopPosts(
+        @Query("after") after: String? = null
+    ): ApiResponse
 
 }
 
