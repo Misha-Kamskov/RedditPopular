@@ -2,20 +2,18 @@ package com.example.popularreddit.ui.screens.main
 
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
-import androidx.paging.cachedIn
+import com.example.models.models.posts.PostsRepository
+import com.example.models.models.posts.entities.Post
+import com.example.models.source.BackendException
+import com.example.models.source.ConnectionException
+import com.example.models.source.ParseBackendResponseException
 import com.example.mvi.MviViewModel
 import com.example.mvi.states.AbstractAction
 import com.example.mvi.states.AbstractEvent
 import com.example.mvi.states.AbstractState
 import com.example.popularreddit.R
-import com.example.popularreddit.models.posts.PostsRepository
-import com.example.popularreddit.models.posts.entities.Post
-import com.example.popularreddit.source.BackendException
-import com.example.popularreddit.source.ConnectionException
-import com.example.popularreddit.source.ParseBackendResponseException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject

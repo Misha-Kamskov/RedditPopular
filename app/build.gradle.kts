@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("org.jetbrains.kotlin.plugin.serialization")
     id("dagger.hilt.android.plugin")
     kotlin("kapt")
 }
@@ -53,6 +52,7 @@ android {
 
 dependencies {
     // Modules
+    implementation(project(":models"))
     implementation(project(":mvi"))
 
     implementation(libs.androidx.core.ktx)
@@ -74,13 +74,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation ("androidx.work:work-runtime-ktx:2.7.1")
+    implementation (libs.androidx.work.runtime.ktx)
 
-
-    //Datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.kotlinx.collections.immutable)
-    implementation(libs.kotlinx.serialization.json)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -91,15 +86,6 @@ dependencies {
     kapt(libs.androidx.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    //Retrofit and OkHttp
-    implementation(libs.okhttp)
-    implementation(libs.logging.interceptor)
-    implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
-    implementation(libs.converter.gson)
-
-    // Picasso
-    implementation(libs.picasso)
     implementation(libs.coil.compose)
 
     //Media3
@@ -109,9 +95,5 @@ dependencies {
     //Paging
     implementation (libs.androidx.paging.runtime)
     implementation (libs.androidx.paging.compose)
-
-
-
-
 }
 

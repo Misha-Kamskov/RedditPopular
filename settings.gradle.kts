@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "PopularReddit"
 include(":app")
 include(":mvi")
+include(":models")

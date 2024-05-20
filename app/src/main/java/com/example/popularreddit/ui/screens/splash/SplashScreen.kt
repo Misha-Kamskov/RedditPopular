@@ -28,7 +28,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.example.popularreddit.R
-import com.example.popularreddit.models.Screen
+import com.example.popularreddit.ui.Screen
 import kotlinx.coroutines.delay
 
 @Composable
