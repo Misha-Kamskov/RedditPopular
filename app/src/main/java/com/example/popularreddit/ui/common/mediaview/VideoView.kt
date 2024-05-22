@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -115,7 +116,7 @@ fun Player(uri: String) {
             }) {
             Text(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 13.dp),
-                text = "Open link",
+                text = stringResource(id = R.string.open_link),
                 color = Color.White,
                 fontSize = 18.sp,
                 fontFamily = FontFamily(Font(R.font.spartan_medium))

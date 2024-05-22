@@ -9,5 +9,7 @@
     <string name="error_message_backend_exception">Something went wrong...</string>
     <string name="error_message_parse_exception">Something went wrong...</string>
     <string name="retry">Retry</string>
+    <string name="reddit">reddit</string>
+    <string name="open_link">Open link</string>
 
 </resources>

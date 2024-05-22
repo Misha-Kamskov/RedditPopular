@@ -3,7 +3,6 @@ package com.example.popularreddit.ui.screens.main
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,7 +39,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -60,11 +57,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -85,12 +79,12 @@ import com.example.popularreddit.ui.common.mediaview.FullScreenPhoto
 import com.example.popularreddit.R
 import com.example.popularreddit.managers.DownloadManager
 import com.example.models.models.appsettings.model.AppSettings
-import com.example.popularreddit.ui.common.themes.DarkGrey
 import com.example.popularreddit.ui.common.themes.MainBlue
 import com.example.models.models.appsettings.model.AppSettingsPrefs
 import com.example.popularreddit.ui.common.InformationBanner
 import com.example.popularreddit.ui.common.RedditTopBar
 import com.example.popularreddit.ui.common.mediaview.Player
+import com.example.popularreddit.ui.common.themes.DarkGrey
 import kotlinx.coroutines.launch
 
 @Composable
@@ -335,7 +329,7 @@ private fun RedditCardVertical(
                 )
                 Text(
                     text = "${post.timeOfCreation} hours ago",
-                    color = DarkGray,
+                    color = DarkGrey,
                     fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.spartan_medium))
                 )
@@ -361,7 +355,7 @@ private fun RedditCardVertical(
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = post.numComments.toString(),
-                        color = Color.DarkGray,
+                        color = DarkGrey,
                         fontSize = 14.sp,
                         fontFamily = FontFamily(Font(R.font.spartan_medium))
                     )
@@ -370,14 +364,15 @@ private fun RedditCardVertical(
                 Image(
                     modifier = Modifier
                         .width(20.dp)
-                        .wrapContentHeight().clickable {
-                                post.videoUrl?.let {
-                                    DownloadManager.downloadMedia(
-                                        context,
-                                        it,
-                                        "reddit"
-                                    )
-                                }
+                        .wrapContentHeight()
+                        .clickable {
+                            post.videoUrl?.let {
+                                DownloadManager.downloadMedia(
+                                    context,
+                                    it,
+                                    context.getString(R.string.reddit)
+                                )
+                            }
                         },
                     painter = painterResource(id = R.drawable.icon_not_saved),
                     contentDescription = null
@@ -405,7 +400,7 @@ private fun RedditCardVertical(
                         }) {
                         Text(
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 13.dp),
-                            text = "Open link",
+                            text = stringResource(id = R.string.open_link),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontFamily = FontFamily(Font(R.font.spartan_medium))
@@ -471,7 +466,7 @@ private fun RedditCardVertical(
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = post.numComments.toString(),
-                                color = DarkGray,
+                                color = DarkGrey,
                                 fontSize = 14.sp,
                                 fontFamily = FontFamily(Font(R.font.spartan_medium))
                             )
@@ -492,7 +487,11 @@ private fun RedditCardVertical(
                                         }
                                         if (post.thumbnail != REDDIT_THUMBNAIL_DEFAULT && post.thumbnail != null) {
                                             (post.thumbnail)?.let {
-                                                DownloadManager.downloadMedia(context, it, "reddit")
+                                                DownloadManager.downloadMedia(
+                                                    context,
+                                                    it,
+                                                    context.getString(R.string.reddit)
+                                                )
                                             }
                                         } else {
                                             Toast
@@ -547,7 +546,7 @@ private fun RedditCardHorizontal(
                     }) {
                     Text(
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 13.dp),
-                        text = "Open link",
+                        text = stringResource(id = R.string.open_link),
                         color = Color.White,
                         fontSize = 18.sp,
                         fontFamily = FontFamily(Font(R.font.spartan_medium))
@@ -585,7 +584,7 @@ private fun RedditCardHorizontal(
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = "${post.timeOfCreation} hours ago",
-                    color = DarkGray,
+                    color = DarkGrey,
                     fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.spartan_medium))
                 )
@@ -602,7 +601,7 @@ private fun RedditCardHorizontal(
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = post.numComments.toString(),
-                        color = DarkGray,
+                        color = DarkGrey,
                         fontSize = 14.sp,
                         fontFamily = FontFamily(Font(R.font.spartan_medium))
                     )
@@ -615,18 +614,22 @@ private fun RedditCardHorizontal(
                         .wrapContentHeight()
                         .clickable {
                             scope.launch {
-                                if (post.isVideo){
+                                if (post.isVideo) {
                                     post.videoUrl?.let {
                                         DownloadManager.downloadMedia(
                                             context,
                                             it,
-                                            "reddit"
+                                            context.getString(R.string.reddit)
                                         )
                                     }
-                                }else{
+                                } else {
                                     if (post.thumbnail != REDDIT_THUMBNAIL_DEFAULT && post.thumbnail != null) {
                                         (post.thumbnail)?.let {
-                                            DownloadManager.downloadMedia(context, it, "reddit")
+                                            DownloadManager.downloadMedia(
+                                                context,
+                                                it,
+                                                context.getString(R.string.reddit)
+                                            )
                                         }
                                     } else {
                                         Toast
