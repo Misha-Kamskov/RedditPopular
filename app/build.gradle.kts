@@ -6,12 +6,12 @@ plugins {
 }
 android {
     namespace = "com.example.popularreddit"
-    compileSdk = 34
+    compileSdk = rootProject.extra["compileSdkVersion"] as? Int?
 
     defaultConfig {
         applicationId = "com.example.popularreddit"
-        minSdk = 27
-        targetSdk = 34
+        minSdk = rootProject.extra["minSdkVersion"] as? Int?
+        targetSdk = rootProject.extra["targetSdkVersion"] as? Int?
         versionCode = 1
         versionName = "1.0"
 
@@ -23,7 +23,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

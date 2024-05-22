@@ -6,3 +6,19 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version("1.6.10") apply false
     id("com.google.dagger.hilt.android") version("2.48") apply false
 }
+
+buildscript {
+    extra.apply {
+        set("compileSdkVersion", 34)
+        set("minSdkVersion", 27)
+        set("targetSdkVersion", 34)
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath(libs.kotlin.serialization)
+    }
+}
+
