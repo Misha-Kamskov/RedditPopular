@@ -14,6 +14,9 @@ data class GetPostResponseEntity(
     @SerializedName("num_comments")
     val numComments: Long,
 
+    @SerializedName("selftext")
+    val selfText: String,
+
     @SerializedName("thumbnail")
     val thumbnail: String?,
 
@@ -41,6 +44,7 @@ data class GetPostResponseEntity(
             authorName = author,
             timeOfCreation = Utils.getDifferenceInHours(timeOfCreation),
             numComments = numComments,
+            selfText = selfText,
             thumbnail = thumbnail,
             urlDest = urlDest,
             widthThumbnail = thumbnailWidth,

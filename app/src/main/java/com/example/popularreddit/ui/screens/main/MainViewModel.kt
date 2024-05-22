@@ -1,7 +1,9 @@
 package com.example.popularreddit.ui.screens.main
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import androidx.paging.map
 import com.example.models.models.posts.PostsRepository
 import com.example.models.models.posts.entities.Post
 import com.example.models.source.BackendException
@@ -15,6 +17,8 @@ import com.example.popularreddit.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.forEach
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,6 +40,9 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val postsFlow = postsRepository.getTopPosts()
+                postsFlow.map {
+                    Log.d("AAA", "---${ it.map { it.selfText} }  ${it.map { it.thumbnail.toString()}}")
+                }
                 updateState(MainState(posts = postsFlow))
             } catch (e: Exception) {
                 updateState(MainState())

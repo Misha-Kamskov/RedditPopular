@@ -5,6 +5,7 @@ data class Post(
     val authorName : String,
     val timeOfCreation : Long,
     val numComments : Long,
+    val selfText: String,
     val thumbnail : String?,
     val urlDest : String?,
     val widthThumbnail: Float?,

@@ -1,6 +1,9 @@
 package com.example.popularreddit.ui.screens.main
 
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -38,6 +41,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -56,9 +60,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -73,6 +79,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.rememberAsyncImagePainter
+import com.example.models.models.Const.REDDIT_THUMBNAIL_DEFAULT
 import com.example.models.models.posts.entities.Post
 import com.example.popularreddit.ui.common.mediaview.FullScreenPhoto
 import com.example.popularreddit.R
@@ -197,8 +204,7 @@ private fun RedditContentVertical(
             .fillMaxWidth()
             .padding(bottom = 50.dp)
             .animateContentSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(40.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         item {
@@ -211,14 +217,18 @@ private fun RedditContentVertical(
                 { infoBannerClosed.value = true }
             }
         }
-
         items(posts.itemCount) {
             posts[it]?.let { post ->
-                RedditCardVertical(post = post) { imageId ->
-                    onCardImageClick(imageId)
+                if (post.widthThumbnail != null && post.heightThumbnail != null) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    RedditCardVertical(post = post) { imageId ->
+                        onCardImageClick(imageId)
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
+
         item {
             when (posts.loadState.refresh) {
                 is LoadState.Loading -> {
@@ -250,7 +260,6 @@ private fun RedditContentHorizontal(
                 .padding(end = 50.dp)
                 .animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(50.dp)
         ) {
             item {
                 AnimatedVisibility(
@@ -265,8 +274,12 @@ private fun RedditContentHorizontal(
 
             items(posts.itemCount) {
                 posts[it]?.let { post ->
-                    RedditCardHorizontal(post = post) { imageId ->
-                        onCardImageClick(imageId)
+                    if (post.widthThumbnail != null && post.heightThumbnail != null) {
+                        Spacer(modifier = Modifier.width(20.dp))
+                        RedditCardHorizontal(post = post) { imageId ->
+                            onCardImageClick(imageId)
+                        }
+                        Spacer(modifier = Modifier.width(20.dp))
                     }
                 }
             }
@@ -297,111 +310,67 @@ private fun RedditCardVertical(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        Row(
+    if (post.isVideo) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 5.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFFE5EBEE)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Text(
-                text = post.authorName,
-                color = Color.Black,
-                fontSize = 18.sp,
-                fontFamily = FontFamily(Font(R.font.spartan_medium))
-            )
-            Text(
-                text = "${post.timeOfCreation} hours ago",
-                color = DarkGrey,
-                fontSize = 14.sp,
-                fontFamily = FontFamily(Font(R.font.spartan_medium))
-            )
-        }
-        val isImageExists =
-            post.heightThumbnail != null && post.widthThumbnail != null && post.urlDest != null
-
-        if (post.isVideo) {
-            post.videoUrl?.let { Player(it) }
-        } else {
-            val ratio = post.heightThumbnail?.let { post.widthThumbnail?.div(it) }
-            if (isImageExists && ratio != null) {
-
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
-                    Image(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(ratio)
-                            .clickable {
-                                onCardImageClick(post.thumbnail)
-                            },
-                        contentScale = ContentScale.FillBounds,
-                        painter = rememberAsyncImagePainter(post.thumbnail),
-                        contentDescription = null
-                    )
-                    Image(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(ratio)
-                            .clickable {
-                                onCardImageClick(post.urlDest ?: post.thumbnail)
-                            },
-                        contentScale = ContentScale.FillBounds,
-                        painter = rememberAsyncImagePainter(post.urlDest ?: post.thumbnail),
-                        contentDescription = null
-                    )
-                }
-
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(3.dp), contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_image_or_video),
-                        color = Color.Black,
-                        fontSize = 18.sp,
-                        fontFamily = FontFamily(Font(R.font.spartan_medium))
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 7.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row {
-                Image(
-                    modifier = Modifier
-                        .width(25.dp)
-                        .wrapContentHeight(),
-                    painter = painterResource(id = R.drawable.icon_comment),
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(5.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = post.numComments.toString(),
-                    color = DarkGrey,
+                    text = post.authorName,
+                    color = Color.Black,
+                    fontSize = 18.sp,
+                    fontFamily = FontFamily(Font(R.font.spartan_medium))
+                )
+                Text(
+                    text = "${post.timeOfCreation} hours ago",
+                    color = DarkGray,
                     fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.spartan_medium))
                 )
-
             }
-            Image(
+
+            post.videoUrl?.let { Player(it) }
+
+            Row(
                 modifier = Modifier
-                    .width(20.dp)
-                    .wrapContentHeight()
-                    .clickable {
-                        coroutineScope.launch {
-                            if (post.isVideo) {
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row {
+                    Image(
+                        modifier = Modifier
+                            .width(25.dp)
+                            .wrapContentHeight(),
+                        painter = painterResource(id = R.drawable.icon_comment),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = post.numComments.toString(),
+                        color = Color.DarkGray,
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily(Font(R.font.spartan_medium))
+                    )
+
+                }
+                Image(
+                    modifier = Modifier
+                        .width(20.dp)
+                        .wrapContentHeight().clickable {
                                 post.videoUrl?.let {
                                     DownloadManager.downloadMedia(
                                         context,
@@ -409,26 +378,139 @@ private fun RedditCardVertical(
                                         "reddit"
                                     )
                                 }
-                            } else {
-                                if (isImageExists) {
-                                    (post.urlDest ?: post.thumbnail)?.let {
-                                        DownloadManager.downloadMedia(context, it, "reddit")
-                                    }
-                                } else {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            context.getString(R.string.image_is_not_available),
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                                }
-                            }
+                        },
+                    painter = painterResource(id = R.drawable.icon_not_saved),
+                    contentDescription = null
+                )
+            }
+        }
+    } else {
+        if (post.widthThumbnail != null && post.heightThumbnail != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFE5EBEE)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (post.thumbnail == REDDIT_THUMBNAIL_DEFAULT) {
+                    Box(modifier = Modifier
+                        .wrapContentSize()
+                        .background(MainBlue)
+                        .padding(horizontal = 5.dp)
+                        .clickable {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.urlDest))
+                            context.startActivity(intent)
+                        }) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 13.dp),
+                            text = "Open link",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontFamily = FontFamily(Font(R.font.spartan_medium))
+                        )
+                    }
+                } else {
+                    Image(
+                        painter = rememberAsyncImagePainter(post.thumbnail),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier
+                            .padding(horizontal = 5.dp, vertical = 10.dp)
+                            .width(post.widthThumbnail!!.dp)
+                            .height(post.heightThumbnail!!.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { onCardImageClick(post.urlDest ?: post.thumbnail) }
+
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(horizontal = 5.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = post.authorName,
+                            color = Color.Black,
+                            fontSize = 18.sp,
+                            fontFamily = FontFamily(Font(R.font.spartan_medium))
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Text(
+                            text = "${post.timeOfCreation} hours ago",
+                            color = DarkGrey,
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily(Font(R.font.spartan_medium))
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 5.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row {
+                            Image(
+                                modifier = Modifier
+                                    .width(25.dp)
+                                    .wrapContentHeight(),
+                                painter = painterResource(id = R.drawable.icon_comment),
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = post.numComments.toString(),
+                                color = DarkGray,
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.spartan_medium))
+                            )
+
                         }
-                    },
-                painter = painterResource(id = R.drawable.icon_not_saved),
-                contentDescription = null
-            )
+                        Image(
+                            modifier = Modifier
+                                .width(20.dp)
+                                .wrapContentHeight()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        post.videoUrl?.let {
+                                            DownloadManager.downloadMedia(
+                                                context,
+                                                it,
+                                                "reddit"
+                                            )
+                                        }
+                                        if (post.thumbnail != REDDIT_THUMBNAIL_DEFAULT && post.thumbnail != null) {
+                                            (post.thumbnail)?.let {
+                                                DownloadManager.downloadMedia(context, it, "reddit")
+                                            }
+                                        } else {
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    context.getString(R.string.image_is_not_available),
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                        }
+                                    }
+                                },
+                            painter = painterResource(id = R.drawable.icon_not_saved),
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -440,87 +522,60 @@ private fun RedditCardHorizontal(
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Row(
         modifier = Modifier
             .fillMaxHeight(0.95f)
-            .wrapContentWidth(),
+            .wrapContentWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFFE5EBEE))
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val isImageExists =
-            post.heightThumbnail != null && post.widthThumbnail != null && post.urlDest != null
-        val ratio = post.heightThumbnail?.let { post.widthThumbnail?.div(it) }
         if (post.isVideo) {
-
             post.videoUrl?.let { Player(it) }
-
         } else {
-            if (isImageExists && ratio != null) {
-                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center){
-                    Image(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(ratio)
-                            .clickable {
-                                onCardImageClick(post.urlDest ?: post.thumbnail)
-                            },
-                        contentScale = ContentScale.FillBounds,
-                        painter = rememberAsyncImagePainter(post.thumbnail),
-                        contentDescription = null
-                    )
-
-                    Image(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(ratio)
-                            .clickable {
-                                onCardImageClick(post.urlDest ?: post.thumbnail)
-                            },
-                        contentScale = ContentScale.FillBounds,
-                        painter = rememberAsyncImagePainter(post.urlDest ?: post.thumbnail),
-                        contentDescription = null
-                    )
-                }
-
-            } else {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (post.thumbnail == REDDIT_THUMBNAIL_DEFAULT) {
+                Box(modifier = Modifier
+                    .wrapContentSize()
+                    .background(MainBlue)
+                    .padding(horizontal = 5.dp)
+                    .clickable {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.urlDest))
+                        context.startActivity(intent)
+                    }) {
                     Text(
-                        text = stringResource(R.string.no_image_or_video),
-                        color = Color.Black,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 13.dp),
+                        text = "Open link",
+                        color = Color.White,
                         fontSize = 18.sp,
                         fontFamily = FontFamily(Font(R.font.spartan_medium))
                     )
                 }
+            } else {
+                Image(
+                    painter = rememberAsyncImagePainter(post.thumbnail),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .padding(horizontal = 5.dp, vertical = 10.dp)
+                        .width(post.widthThumbnail!!.dp)
+                        .height(post.heightThumbnail!!.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onCardImageClick(post.urlDest ?: post.thumbnail) }
+
+                )
             }
         }
-
         Column(
             modifier = Modifier
-                .fillMaxHeight(0.9f)
+                .fillMaxHeight(0.95f)
                 .wrapContentWidth()
-                .shadow(
-                    8.dp, RoundedCornerShape(
-                        topEnd = 20.dp,
-                        bottomEnd = 20.dp
-                    )
-                )
-                .clip(
-                    RoundedCornerShape(
-                        topEnd = 20.dp,
-                        bottomEnd = 20.dp
-                    )
-                )
-                .background(Color.White),
+                .padding(horizontal = 10.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-
-            Column(
-                modifier = Modifier.padding(
-                    top = 5.dp,
-                    start = 10.dp,
-                    end = 10.dp
-                )
-            ) {
+            Column {
                 Text(
                     text = post.authorName,
                     color = Color.Black,
@@ -530,64 +585,65 @@ private fun RedditCardHorizontal(
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = "${post.timeOfCreation} hours ago",
-                    color = DarkGrey,
+                    color = DarkGray,
                     fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.spartan_medium))
                 )
             }
+            Column(Modifier.padding(horizontal = 5.dp, vertical = 4.dp)) {
+                Row {
+                    Image(
+                        modifier = Modifier
+                            .width(25.dp)
+                            .wrapContentHeight(),
+                        painter = painterResource(id = R.drawable.icon_comment),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = post.numComments.toString(),
+                        color = DarkGray,
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily(Font(R.font.spartan_medium))
+                    )
 
-            Row(
-                modifier = Modifier.padding(
-                    start = 10.dp,
-                    end = 10.dp
-                )
-            ) {
+                }
+                Spacer(modifier = Modifier.height(5.dp))
                 Image(
                     modifier = Modifier
-                        .width(25.dp)
-                        .wrapContentHeight(),
-                    painter = painterResource(id = R.drawable.icon_comment),
+                        .width(20.dp)
+                        .wrapContentHeight()
+                        .clickable {
+                            scope.launch {
+                                if (post.isVideo){
+                                    post.videoUrl?.let {
+                                        DownloadManager.downloadMedia(
+                                            context,
+                                            it,
+                                            "reddit"
+                                        )
+                                    }
+                                }else{
+                                    if (post.thumbnail != REDDIT_THUMBNAIL_DEFAULT && post.thumbnail != null) {
+                                        (post.thumbnail)?.let {
+                                            DownloadManager.downloadMedia(context, it, "reddit")
+                                        }
+                                    } else {
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                context.getString(R.string.image_is_not_available),
+                                                Toast.LENGTH_SHORT
+                                            )
+                                            .show()
+                                    }
+                                }
+                            }
+                        },
+                    painter = painterResource(id = R.drawable.icon_not_saved),
                     contentDescription = null
                 )
-                Spacer(modifier = Modifier.width(5.dp))
-
-                Text(
-                    text = post.numComments.toString(),
-                    color = DarkGrey,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily(Font(R.font.spartan_medium))
-                )
-
             }
-
-            Image(
-                modifier = Modifier
-                    .width(20.dp)
-                    .wrapContentHeight()
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 5.dp)
-                    .clickable {
-                        if (post.isVideo) {
-                            post.videoUrl?.let { DownloadManager.downloadMedia(context, it, "reddit") }
-                        } else {
-                            if (isImageExists) {
-                                (post.urlDest ?: post.thumbnail)?.let {
-                                    DownloadManager.downloadMedia(context, it, "reddit")
-                                }
-                            } else {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        context.getString(R.string.image_is_not_available),
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
-                            }
-                        }
-                    },
-                painter = painterResource(id = R.drawable.icon_not_saved),
-                contentDescription = null
-            )
         }
     }
 }

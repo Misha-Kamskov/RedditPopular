@@ -1,12 +1,14 @@
 package com.example.popularreddit.ui.common.mediaview
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -20,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.Font
@@ -47,6 +50,7 @@ fun Player(uri: String) {
     val mediaItem = MediaItem.fromUri(uri)
     var lifecycle by remember { mutableStateOf(Lifecycle.Event.ON_CREATE) }
 
+    val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
 
     val mediaSource: MediaSource =
         ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory())
@@ -74,10 +78,13 @@ fun Player(uri: String) {
         }
     }
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        val modifier = if (isPortrait) Modifier
+            .fillMaxWidth()
+            .aspectRatio(16f / 9f) else Modifier
+            .fillMaxHeight()
+            .aspectRatio(9f / 16f)
         AndroidView(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f),
+            modifier = modifier,
             factory = {
                 PlayerView(context).also { playerView ->
                     playerView.player = exoPlayer

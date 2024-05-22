@@ -4,4 +4,5 @@ object Const {
 
     const val BASE_URL = "https://www.reddit.com/top.json/"
     const val DATA_STORE_FILE_NAME = "appSettings.json"
+    const val REDDIT_THUMBNAIL_DEFAULT = "default"
 }
